@@ -24,9 +24,11 @@ git pull
 - Create host data path:
 
 ```bash
-sudo mkdir -p /data/tillforge-repo
+sudo mkdir -p /data/tillforge-repo/{database,storage,ssl}
 sudo chown -R 10001:10001 /data/tillforge-repo
 ```
+
+If this machine already had a previous install, run the same `chown` command again before `make up-*`.
 
 ## 2) Configure environment
 

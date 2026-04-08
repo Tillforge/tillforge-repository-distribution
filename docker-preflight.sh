@@ -19,19 +19,33 @@ docker info >/dev/null 2>&1 || { echo "ERROR: docker daemon not reachable"; exit
 
 mkdir -p "$DATA_DIR/database" "$DATA_DIR/storage" "$DATA_DIR/ssl"
 
-if stat --version >/dev/null 2>&1; then
-  # GNU stat (Linux)
-  OWNER_UID="$(stat -c %u "$DATA_DIR")"
-  OWNER_GID="$(stat -c %g "$DATA_DIR")"
-else
-  # BSD stat (macOS)
-  OWNER_UID="$(stat -f %u "$DATA_DIR")"
-  OWNER_GID="$(stat -f %g "$DATA_DIR")"
-fi
-if [[ "$OWNER_UID" != "10001" || "$OWNER_GID" != "10001" ]]; then
-  echo "WARNING: $DATA_DIR owner is ${OWNER_UID}:${OWNER_GID}, recommended 10001:10001"
-  echo "Run: sudo chown -R 10001:10001 \"$DATA_DIR\""
-fi
+owner_uid() {
+  local path="$1"
+  if stat --version >/dev/null 2>&1; then
+    stat -c %u "$path"
+  else
+    stat -f %u "$path"
+  fi
+}
+
+owner_gid() {
+  local path="$1"
+  if stat --version >/dev/null 2>&1; then
+    stat -c %g "$path"
+  else
+    stat -f %g "$path"
+  fi
+}
+
+for p in "$DATA_DIR" "$DATA_DIR/database" "$DATA_DIR/storage" "$DATA_DIR/ssl"; do
+  OWNER_UID="$(owner_uid "$p")"
+  OWNER_GID="$(owner_gid "$p")"
+  if [[ "$OWNER_UID" != "10001" || "$OWNER_GID" != "10001" ]]; then
+    echo "ERROR: $p owner is ${OWNER_UID}:${OWNER_GID}, expected 10001:10001."
+    echo "Run: sudo chown -R 10001:10001 \"$DATA_DIR\""
+    exit 1
+  fi
+done
 
 has_env_value() {
   local key="$1"
