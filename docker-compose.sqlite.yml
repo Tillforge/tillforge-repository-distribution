@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  repository:
+    image: ${REPO_IMAGE:-ghcr.io/tillforge/tillforge-repository:latest}
+    container_name: tillforge-repository
+    ports:
+      - "${REPO_BIND_ADDRESS:-127.0.0.1}:${REPO_PORT:-8001}:8001"
+      - "${SYNC_BIND_ADDRESS:-127.0.0.1}:${SYNC_API_PORT:-9001}:9001"
+    environment:
+      - REPO_NAME=${REPO_NAME:-Tillforge Repository Server}
+      - REPO_HOST=0.0.0.0
+      - REPO_PORT=8001
+      - SYNC_API_PORT=9001
+      - SYNC_SSL_ENABLED=${SYNC_SSL_ENABLED:-${REPO_SSL_ENABLED:-false}}
+      - SYNC_SSL_CERT_PATH=${SYNC_SSL_CERT_PATH:-${REPO_SSL_CERT_PATH:-/data/ssl/localhost.crt}}
+      - SYNC_SSL_KEY_PATH=${SYNC_SSL_KEY_PATH:-${REPO_SSL_KEY_PATH:-/data/ssl/localhost.key}}
+      - REPO_DEBUG=${REPO_DEBUG:-false}
+      - REPO_STORAGE_PATH=/data/storage
+      - REPO_DATABASE_PATH=/data/database/repository.db
+      - REPO_DB_BACKEND=${REPO_DB_BACKEND:-sqlite}
+      - REPO_MAX_FILE_SIZE=${REPO_MAX_FILE_SIZE:-524288000}
+      - REPO_ADMIN_API_KEY=${REPO_ADMIN_API_KEY:-}
+      - SYNC_API_SHARED_SECRET=${SYNC_API_SHARED_SECRET:-}
+      - REPO_PUBLIC_ACCESS=${REPO_PUBLIC_ACCESS:-false}
+      - REPO_RATE_LIMIT=${REPO_RATE_LIMIT:-100}
+      - REPO_SSL_ENABLED=${REPO_SSL_ENABLED:-false}
+      - REPO_SSL_CERT_PATH=${REPO_SSL_CERT_PATH:-}
+      - REPO_SSL_KEY_PATH=${REPO_SSL_KEY_PATH:-}
+      - REPO_SSL_DIR=/data/ssl
+      - CERTBOT_AUTO_RENEW=${CERTBOT_AUTO_RENEW:-true}
+      - CERTBOT_RENEW_INTERVAL_SECONDS=${CERTBOT_RENEW_INTERVAL_SECONDS:-21600}
+      - CERTBOT_RENEW_STARTUP_DELAY_SECONDS=${CERTBOT_RENEW_STARTUP_DELAY_SECONDS:-120}
+      - CERTBOT_AUTO_RESTART_ON_RENEW=${CERTBOT_AUTO_RESTART_ON_RENEW:-true}
+      - REPO_DESCRIPTION=${REPO_DESCRIPTION:-Package repository for your platform}
+      - REPO_CONTACT=${REPO_CONTACT:-admin@poscmdb.local}
+      - SYNC_DB_BACKEND=${SYNC_DB_BACKEND:-sqlite}
+      - TZ=${TZ:-Europe/Amsterdam}
+    volumes:
+      - /data/tillforge-repo:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
