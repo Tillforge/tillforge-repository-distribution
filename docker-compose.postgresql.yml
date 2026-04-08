@@ -1,6 +1,18 @@
 version: "3.8"
 
 services:
+  clamav:
+    image: clamav/clamav:latest
+    container_name: tillforge-repository-clamav
+    volumes:
+      - /data/tillforge-repo/storage:/data/storage
+      - /data/tillforge-repo/clamav:/var/lib/clamav
+    restart: unless-stopped
+    networks:
+      - repository_internal
+    security_opt:
+      - no-new-privileges:true
+
   postgres:
     image: postgres:16-alpine
     container_name: tillforge-repository-postgres
@@ -29,6 +41,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      clamav:
+        condition: service_started
     ports:
       - "${REPO_BIND_ADDRESS:-127.0.0.1}:${REPO_PORT:-8001}:8001"
       - "${SYNC_BIND_ADDRESS:-127.0.0.1}:${SYNC_API_PORT:-9001}:9001"
@@ -58,6 +72,10 @@ services:
       - CERTBOT_RENEW_INTERVAL_SECONDS=${CERTBOT_RENEW_INTERVAL_SECONDS:-21600}
       - CERTBOT_RENEW_STARTUP_DELAY_SECONDS=${CERTBOT_RENEW_STARTUP_DELAY_SECONDS:-120}
       - CERTBOT_AUTO_RESTART_ON_RENEW=${CERTBOT_AUTO_RESTART_ON_RENEW:-true}
+      - CLAMAV_TCP_HOST=${CLAMAV_TCP_HOST:-clamav}
+      - CLAMAV_TCP_PORT=${CLAMAV_TCP_PORT:-3310}
+      - CLAMAV_SCAN_TARGET=/data/storage
+      - CLAMAV_SCAN_TIMEOUT_SECONDS=${CLAMAV_SCAN_TIMEOUT_SECONDS:-1800}
       - REPO_DESCRIPTION=${REPO_DESCRIPTION:-Package repository for your platform}
       - REPO_CONTACT=${REPO_CONTACT:-admin@poscmdb.local}
       - SYNC_DB_BACKEND=${SYNC_DB_BACKEND:-postgresql}
