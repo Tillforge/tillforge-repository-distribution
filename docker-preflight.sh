@@ -19,8 +19,15 @@ docker info >/dev/null 2>&1 || { echo "ERROR: docker daemon not reachable"; exit
 
 mkdir -p "$DATA_DIR/database" "$DATA_DIR/storage" "$DATA_DIR/ssl"
 
-OWNER_UID="$(stat -f %u "$DATA_DIR")"
-OWNER_GID="$(stat -f %g "$DATA_DIR")"
+if stat --version >/dev/null 2>&1; then
+  # GNU stat (Linux)
+  OWNER_UID="$(stat -c %u "$DATA_DIR")"
+  OWNER_GID="$(stat -c %g "$DATA_DIR")"
+else
+  # BSD stat (macOS)
+  OWNER_UID="$(stat -f %u "$DATA_DIR")"
+  OWNER_GID="$(stat -f %g "$DATA_DIR")"
+fi
 if [[ "$OWNER_UID" != "10001" || "$OWNER_GID" != "10001" ]]; then
   echo "WARNING: $DATA_DIR owner is ${OWNER_UID}:${OWNER_GID}, recommended 10001:10001"
   echo "Run: sudo chown -R 10001:10001 \"$DATA_DIR\""
