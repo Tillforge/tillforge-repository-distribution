@@ -11,6 +11,13 @@ git clone https://github.com/Tillforge/tillforge-repository-distribution.git
 cd tillforge-repository-distribution
 ```
 
+If already cloned:
+
+```bash
+cd /opt/tillforge-repository-distribution
+git pull
+```
+
 ## 1) Prepare machine
 
 - Install Docker + Docker Compose v2
@@ -38,6 +45,11 @@ make init-postgresql
 ```
 
 This also sets `POSTGRES_PASSWORD` and PostgreSQL connection variables automatically.
+
+ClamAV note:
+- ClamAV sidecar is enabled by default via Docker Compose.
+- You do **not** need to uncomment ClamAV lines in `.env` for normal use.
+- Only set `CLAMAV_TCP_HOST`, `CLAMAV_TCP_PORT`, `CLAMAV_SCAN_TARGET`, `CLAMAV_SCAN_TIMEOUT_SECONDS`, `CLAMAV_QUARANTINE_ENABLED`, `CLAMAV_QUARANTINE_DIR` when you want non-default values.
 
 Default image stays on:
 - `REPO_IMAGE=ghcr.io/tillforge/tillforge-repository:latest`
@@ -81,6 +93,13 @@ make down-postgresql
 
 This bundle starts a dedicated `clamav` container sidecar by default.  
 The admin page can trigger scans and read status/log output through the repository API.
+
+Behavior:
+- Admin scan is **on-demand** (not a cron schedule by default).
+- Infected files are automatically moved to quarantine (`CLAMAV_QUARANTINE_ENABLED=true` by default).
+- Audit events (scan start/completion, quarantine success/failure) are stored in a persistent audit log.
+- Default quarantine path: `/data/tillforge-repo/clamav/quarantine`
+- Default audit log path: `/data/tillforge-repo/clamav/audit.jsonl`
 
 What gets scanned:
 - `/data/tillforge-repo/storage` on the host

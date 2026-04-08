@@ -33,10 +33,19 @@ if [[ "$OWNER_UID" != "10001" || "$OWNER_GID" != "10001" ]]; then
   echo "Run: sudo chown -R 10001:10001 \"$DATA_DIR\""
 fi
 
-rg -q "^REPO_ADMIN_API_KEY=" "$ENV_FILE" || { echo "ERROR: REPO_ADMIN_API_KEY missing"; exit 1; }
-rg -q "^SYNC_API_SHARED_SECRET=" "$ENV_FILE" || { echo "ERROR: SYNC_API_SHARED_SECRET missing"; exit 1; }
+has_env_value() {
+  local key="$1"
+  if command -v rg >/dev/null 2>&1; then
+    rg -q "^${key}=.+" "$ENV_FILE"
+  else
+    grep -Eq "^${key}=.+" "$ENV_FILE"
+  fi
+}
+
+has_env_value "REPO_ADMIN_API_KEY" || { echo "ERROR: REPO_ADMIN_API_KEY missing"; exit 1; }
+has_env_value "SYNC_API_SHARED_SECRET" || { echo "ERROR: SYNC_API_SHARED_SECRET missing"; exit 1; }
 if [[ "$MODE" == "postgresql" ]]; then
-  rg -q "^POSTGRES_PASSWORD=" "$ENV_FILE" || { echo "ERROR: POSTGRES_PASSWORD missing"; exit 1; }
+  has_env_value "POSTGRES_PASSWORD" || { echo "ERROR: POSTGRES_PASSWORD missing"; exit 1; }
 fi
 
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" config >/dev/null
