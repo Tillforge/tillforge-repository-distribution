@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-.PHONY: help init-sqlite init-postgresql check-env up-sqlite up-postgresql down-sqlite down-postgresql logs-sqlite logs-postgresql
+.PHONY: help init-sqlite init-postgresql check-env up-sqlite up-postgresql down-sqlite down-postgresql logs-sqlite logs-postgresql refresh-sqlite refresh-postgresql
 
 ENV_FILE ?= .env
 
@@ -13,6 +13,8 @@ help:
 	@echo "  make down-postgresql"
 	@echo "  make logs-sqlite"
 	@echo "  make logs-postgresql"
+	@echo "  make refresh-sqlite      # pull + force-recreate sqlite stack"
+	@echo "  make refresh-postgresql  # pull + force-recreate postgres stack"
 
 init-sqlite:
 	@if [[ -f "$(ENV_FILE)" ]]; then \
@@ -93,3 +95,13 @@ logs-sqlite: check-env
 
 logs-postgresql: check-env
 	docker compose --env-file $(ENV_FILE) -f docker-compose.postgresql.yml logs -f
+
+refresh-sqlite: check-env
+	./docker-preflight.sh sqlite
+	docker compose --env-file $(ENV_FILE) -f docker-compose.sqlite.yml pull repository clamav
+	docker compose --env-file $(ENV_FILE) -f docker-compose.sqlite.yml up -d --force-recreate repository clamav
+
+refresh-postgresql: check-env
+	./docker-preflight.sh postgresql
+	docker compose --env-file $(ENV_FILE) -f docker-compose.postgresql.yml pull repository postgres clamav
+	docker compose --env-file $(ENV_FILE) -f docker-compose.postgresql.yml up -d --force-recreate repository postgres clamav

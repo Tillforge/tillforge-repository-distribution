@@ -110,13 +110,21 @@ make logs-postgresql
 make down-postgresql
 ```
 
+Update to latest images and recreate running services:
+
+```bash
+make refresh-sqlite
+# or
+make refresh-postgresql
+```
+
 ## 5) Malware scanning (recommended)
 
 This bundle starts a dedicated `clamav` container sidecar by default.  
 The admin page can trigger scans and read status/log output through the repository API.
 
 Behavior:
-- Admin scan is **on-demand** (not a cron schedule by default).
+- Admin scan supports **on-demand** and scheduled auto-scan (configurable in Admin UI).
 - Infected files are automatically moved to quarantine (`CLAMAV_QUARANTINE_ENABLED=true` by default).
 - Audit events (scan start/completion, quarantine success/failure) are stored in a persistent audit log.
 - Default quarantine path: `/data/tillforge-repo/clamav/quarantine`
