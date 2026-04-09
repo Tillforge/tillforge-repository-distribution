@@ -118,6 +118,20 @@ make logs-postgresql
 make down-postgresql
 ```
 
+If Docker reports a container name conflict (for example `tillforge-repository already in use`), run:
+
+```bash
+make clean-conflicts
+```
+
+Or do a full resilient restart flow:
+
+```bash
+make recover-postgresql
+# or
+make recover-sqlite
+```
+
 Update to latest images and recreate running services:
 
 ```bash

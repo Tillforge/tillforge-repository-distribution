@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-.PHONY: help init-sqlite init-postgresql check-env up-sqlite up-postgresql down-sqlite down-postgresql logs-sqlite logs-postgresql refresh-sqlite refresh-postgresql security-check
+.PHONY: help init-sqlite init-postgresql check-env clean-conflicts up-sqlite up-postgresql down-sqlite down-postgresql logs-sqlite logs-postgresql refresh-sqlite refresh-postgresql recover-sqlite recover-postgresql security-check
 
 ENV_FILE ?= .env
 
@@ -13,8 +13,11 @@ help:
 	@echo "  make down-postgresql"
 	@echo "  make logs-sqlite"
 	@echo "  make logs-postgresql"
+	@echo "  make clean-conflicts    # remove stale conflicting container names"
 	@echo "  make refresh-sqlite      # pull + force-recreate sqlite stack"
 	@echo "  make refresh-postgresql  # pull + force-recreate postgres stack"
+	@echo "  make recover-sqlite      # down + clean conflicts + pull + recreate"
+	@echo "  make recover-postgresql  # down + clean conflicts + pull + recreate"
 	@echo "  make security-check      # verify key-only API security posture"
 
 init-sqlite:
@@ -77,11 +80,19 @@ check-env:
 		exit 1; \
 	fi
 
-up-sqlite: check-env
+clean-conflicts:
+	@for c in tillforge-repository tillforge-repository-postgres tillforge-repository-clamav; do \
+		if docker container inspect "$$c" >/dev/null 2>&1; then \
+			echo "INFO: removing conflicting container '$$c'"; \
+			docker rm -f "$$c" >/dev/null 2>&1 || true; \
+		fi; \
+	done
+
+up-sqlite: check-env clean-conflicts
 	./docker-preflight.sh sqlite
 	docker compose --env-file $(ENV_FILE) -f docker-compose.sqlite.yml up -d
 
-up-postgresql: check-env
+up-postgresql: check-env clean-conflicts
 	./docker-preflight.sh postgresql
 	docker compose --env-file $(ENV_FILE) -f docker-compose.postgresql.yml up -d
 
@@ -97,15 +108,25 @@ logs-sqlite: check-env
 logs-postgresql: check-env
 	docker compose --env-file $(ENV_FILE) -f docker-compose.postgresql.yml logs -f
 
-refresh-sqlite: check-env
+refresh-sqlite: check-env clean-conflicts
 	./docker-preflight.sh sqlite
 	docker compose --env-file $(ENV_FILE) -f docker-compose.sqlite.yml pull repository clamav
 	docker compose --env-file $(ENV_FILE) -f docker-compose.sqlite.yml up -d --force-recreate repository clamav
 
-refresh-postgresql: check-env
+refresh-postgresql: check-env clean-conflicts
 	./docker-preflight.sh postgresql
 	docker compose --env-file $(ENV_FILE) -f docker-compose.postgresql.yml pull repository postgres clamav
 	docker compose --env-file $(ENV_FILE) -f docker-compose.postgresql.yml up -d --force-recreate repository postgres clamav
+
+recover-sqlite: check-env
+	-docker compose --env-file $(ENV_FILE) -f docker-compose.sqlite.yml down --remove-orphans
+	$(MAKE) clean-conflicts
+	$(MAKE) refresh-sqlite
+
+recover-postgresql: check-env
+	-docker compose --env-file $(ENV_FILE) -f docker-compose.postgresql.yml down --remove-orphans
+	$(MAKE) clean-conflicts
+	$(MAKE) refresh-postgresql
 
 security-check: check-env
 	./security-self-check.sh "$(ENV_FILE)"

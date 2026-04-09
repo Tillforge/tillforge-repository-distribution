@@ -4,6 +4,7 @@ set -euo pipefail
 MODE="${1:-sqlite}"
 DATA_DIR="${DATA_DIR:-/data/tillforge-repo}"
 ENV_FILE="${ENV_FILE:-.env}"
+AUTO_FIX_PERMS="${AUTO_FIX_PERMS:-true}"
 
 if [[ "$MODE" != "sqlite" && "$MODE" != "postgresql" ]]; then
   echo "ERROR: Use sqlite or postgresql"
@@ -49,9 +50,30 @@ for p in "${paths_to_check[@]}"; do
   OWNER_UID="$(owner_uid "$p")"
   OWNER_GID="$(owner_gid "$p")"
   if [[ "$OWNER_UID" != "10001" || "$OWNER_GID" != "10001" ]]; then
-    echo "ERROR: $p owner is ${OWNER_UID}:${OWNER_GID}, expected 10001:10001."
-    echo "Run: sudo chown -R 10001:10001 \"$DATA_DIR\""
-    exit 1
+    if [[ "$AUTO_FIX_PERMS" == "true" || "$AUTO_FIX_PERMS" == "1" || "$AUTO_FIX_PERMS" == "yes" ]]; then
+      echo "WARN: $p owner is ${OWNER_UID}:${OWNER_GID}, expected 10001:10001."
+      echo "INFO: attempting automatic ownership fix on $DATA_DIR ..."
+      if chown -R 10001:10001 "$DATA_DIR" >/dev/null 2>&1; then
+        OWNER_UID="$(owner_uid "$p")"
+        OWNER_GID="$(owner_gid "$p")"
+        if [[ "$OWNER_UID" == "10001" && "$OWNER_GID" == "10001" ]]; then
+          echo "INFO: ownership fixed for $p"
+        else
+          echo "ERROR: auto-fix ran but $p is still ${OWNER_UID}:${OWNER_GID} (expected 10001:10001)."
+          echo "Run: sudo chown -R 10001:10001 \"$DATA_DIR\""
+          exit 1
+        fi
+      else
+        echo "ERROR: could not auto-fix ownership for $DATA_DIR."
+        echo "Run: sudo chown -R 10001:10001 \"$DATA_DIR\""
+        exit 1
+      fi
+    else
+      echo "ERROR: $p owner is ${OWNER_UID}:${OWNER_GID}, expected 10001:10001."
+      echo "Run: sudo chown -R 10001:10001 \"$DATA_DIR\""
+      echo "Tip: set AUTO_FIX_PERMS=true to auto-correct during preflight."
+      exit 1
+    fi
   fi
 done
 
