@@ -17,7 +17,7 @@ docker info >/dev/null 2>&1 || { echo "ERROR: docker daemon not reachable"; exit
 [[ -f "$COMPOSE_FILE" ]] || { echo "ERROR: missing $COMPOSE_FILE"; exit 1; }
 [[ -f "$ENV_FILE" ]] || { echo "ERROR: missing $ENV_FILE (copy .env.example first)"; exit 1; }
 
-mkdir -p "$DATA_DIR/database" "$DATA_DIR/storage" "$DATA_DIR/ssl" "$DATA_DIR/clamav"
+mkdir -p "$DATA_DIR/database" "$DATA_DIR/storage" "$DATA_DIR/ssl" "$DATA_DIR/clamav" "$DATA_DIR/clamav-app"
 if [[ "$MODE" == "postgresql" ]]; then
   mkdir -p "$DATA_DIR/postgres"
 fi
@@ -40,7 +40,7 @@ owner_gid() {
   fi
 }
 
-paths_to_check=("$DATA_DIR" "$DATA_DIR/database" "$DATA_DIR/storage" "$DATA_DIR/ssl" "$DATA_DIR/clamav")
+paths_to_check=("$DATA_DIR" "$DATA_DIR/database" "$DATA_DIR/storage" "$DATA_DIR/ssl" "$DATA_DIR/clamav" "$DATA_DIR/clamav-app")
 if [[ "$MODE" == "postgresql" ]]; then
   paths_to_check+=("$DATA_DIR/postgres")
 fi
