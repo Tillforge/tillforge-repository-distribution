@@ -28,6 +28,7 @@ ADMIN_KEY="$(get_env_value REPO_ADMIN_API_KEY)"
 PUBLIC_ACCESS_RAW="$(get_env_value REPO_PUBLIC_ACCESS)"
 API_KEY_ONLY_RAW="$(get_env_value REPO_API_KEY_ONLY)"
 EXPOSE_DOCS_RAW="$(get_env_value REPO_EXPOSE_API_DOCS)"
+SSL_ENABLED_RAW="$(get_env_value REPO_SSL_ENABLED)"
 
 if [[ -z "$ADMIN_KEY" ]]; then
   echo "ERROR: REPO_ADMIN_API_KEY is empty in $ENV_FILE"
@@ -49,20 +50,60 @@ if to_bool "$EXPOSE_DOCS_RAW"; then
   EXPOSE_DOCS=true
 fi
 
-BASE_URL="http://127.0.0.1:${REPO_PORT}"
+SSL_ENABLED=false
+if to_bool "$SSL_ENABLED_RAW"; then
+  SSL_ENABLED=true
+fi
+
+status_code() {
+  local url="$1"
+  shift
+  local code
+  # Keep check running even when curl reports transport errors (52, 56, etc).
+  code="$(curl -k -sS -o /dev/null -w "%{http_code}" "$@" "$url" 2>/dev/null || true)"
+  if [[ -z "$code" ]]; then
+    code="000"
+  fi
+  echo "$code"
+}
+
+pick_base_url() {
+  local -a candidates=()
+  if [[ "$SSL_ENABLED" == "true" ]]; then
+    candidates=("https://127.0.0.1:${REPO_PORT}" "http://127.0.0.1:${REPO_PORT}")
+  else
+    candidates=("http://127.0.0.1:${REPO_PORT}" "https://127.0.0.1:${REPO_PORT}")
+  fi
+
+  local candidate
+  for candidate in "${candidates[@]}"; do
+    local code
+    code="$(status_code "${candidate}/health")"
+    if [[ "$code" == "200" ]]; then
+      echo "$candidate"
+      return 0
+    fi
+  done
+  echo ""
+  return 1
+}
+
+BASE_URL="$(pick_base_url || true)"
+if [[ -z "$BASE_URL" ]]; then
+  echo "ERROR: repository health endpoint is unreachable on both HTTP and HTTPS at 127.0.0.1:${REPO_PORT}"
+  echo "Hint: check container status/logs:"
+  echo "  docker ps | rg tillforge-repository"
+  echo "  docker logs --tail=200 tillforge-repository"
+  exit 1
+fi
 
 echo "== Tillforge Security Self Check =="
 echo "Base URL: $BASE_URL"
 echo "Public access: $PUBLIC_ACCESS"
 echo "API key only: $API_KEY_ONLY"
 echo "Expose docs: $EXPOSE_DOCS"
+echo "SSL enabled (env): $SSL_ENABLED"
 echo
-
-status_code() {
-  local url="$1"
-  shift
-  curl -sS -o /dev/null -w "%{http_code}" "$@" "$url"
-}
 
 assert_status() {
   local name="$1"
