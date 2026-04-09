@@ -59,6 +59,14 @@ Recommended in VPC:
 ```env
 REPO_BIND_ADDRESS=0.0.0.0
 SYNC_BIND_ADDRESS=0.0.0.0
+# Keep API key-only auth for /api/*
+REPO_API_KEY_ONLY=true
+# Keep docs closed in production
+REPO_EXPOSE_API_DOCS=false
+# Restrict accepted Host headers
+REPO_ALLOWED_HOSTS=repo.example.com,localhost,127.0.0.1
+# Allow only explicit browser origins if cross-origin is needed
+# REPO_CORS_ALLOW_ORIGINS=https://repo.example.com
 ```
 
 Firewall / security group rules:
@@ -118,6 +126,12 @@ make refresh-sqlite
 make refresh-postgresql
 ```
 
+Run security posture self-check:
+
+```bash
+make security-check
+```
+
 ## 5) Malware scanning (recommended)
 
 This bundle starts a dedicated `clamav` container sidecar by default.  
@@ -127,7 +141,7 @@ Behavior:
 - Admin scan supports **on-demand** and scheduled auto-scan (configurable in Admin UI).
 - Infected files are automatically moved to quarantine (`CLAMAV_QUARANTINE_ENABLED=true` by default).
 - Audit events (scan start/completion, quarantine success/failure) are stored in a persistent audit log.
-- Default quarantine path: `/data/tillforge-repo/clamav/quarantine`
+- Default quarantine path: `/data/tillforge-repo/clamav-app/quarantine`
 - Default audit log path: `/data/tillforge-repo/clamav-app/audit.jsonl`
 
 What gets scanned:

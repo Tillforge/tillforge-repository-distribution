@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-.PHONY: help init-sqlite init-postgresql check-env up-sqlite up-postgresql down-sqlite down-postgresql logs-sqlite logs-postgresql refresh-sqlite refresh-postgresql
+.PHONY: help init-sqlite init-postgresql check-env up-sqlite up-postgresql down-sqlite down-postgresql logs-sqlite logs-postgresql refresh-sqlite refresh-postgresql security-check
 
 ENV_FILE ?= .env
 
@@ -15,6 +15,7 @@ help:
 	@echo "  make logs-postgresql"
 	@echo "  make refresh-sqlite      # pull + force-recreate sqlite stack"
 	@echo "  make refresh-postgresql  # pull + force-recreate postgres stack"
+	@echo "  make security-check      # verify key-only API security posture"
 
 init-sqlite:
 	@if [[ -f "$(ENV_FILE)" ]]; then \
@@ -105,3 +106,6 @@ refresh-postgresql: check-env
 	./docker-preflight.sh postgresql
 	docker compose --env-file $(ENV_FILE) -f docker-compose.postgresql.yml pull repository postgres clamav
 	docker compose --env-file $(ENV_FILE) -f docker-compose.postgresql.yml up -d --force-recreate repository postgres clamav
+
+security-check: check-env
+	./security-self-check.sh "$(ENV_FILE)"
