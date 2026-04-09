@@ -17,7 +17,10 @@ docker info >/dev/null 2>&1 || { echo "ERROR: docker daemon not reachable"; exit
 [[ -f "$COMPOSE_FILE" ]] || { echo "ERROR: missing $COMPOSE_FILE"; exit 1; }
 [[ -f "$ENV_FILE" ]] || { echo "ERROR: missing $ENV_FILE (copy .env.example first)"; exit 1; }
 
-mkdir -p "$DATA_DIR/database" "$DATA_DIR/storage" "$DATA_DIR/ssl"
+mkdir -p "$DATA_DIR/database" "$DATA_DIR/storage" "$DATA_DIR/ssl" "$DATA_DIR/clamav"
+if [[ "$MODE" == "postgresql" ]]; then
+  mkdir -p "$DATA_DIR/postgres"
+fi
 
 owner_uid() {
   local path="$1"
@@ -37,7 +40,12 @@ owner_gid() {
   fi
 }
 
-for p in "$DATA_DIR" "$DATA_DIR/database" "$DATA_DIR/storage" "$DATA_DIR/ssl"; do
+paths_to_check=("$DATA_DIR" "$DATA_DIR/database" "$DATA_DIR/storage" "$DATA_DIR/ssl" "$DATA_DIR/clamav")
+if [[ "$MODE" == "postgresql" ]]; then
+  paths_to_check+=("$DATA_DIR/postgres")
+fi
+
+for p in "${paths_to_check[@]}"; do
   OWNER_UID="$(owner_uid "$p")"
   OWNER_GID="$(owner_gid "$p")"
   if [[ "$OWNER_UID" != "10001" || "$OWNER_GID" != "10001" ]]; then

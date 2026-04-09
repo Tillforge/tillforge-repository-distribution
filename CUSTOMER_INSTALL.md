@@ -24,7 +24,7 @@ git pull
 - Create host data path:
 
 ```bash
-sudo mkdir -p /data/tillforge-repo/{database,storage,ssl}
+sudo mkdir -p /data/tillforge-repo/{database,storage,ssl,clamav,postgres}
 sudo chown -R 10001:10001 /data/tillforge-repo
 ```
 
