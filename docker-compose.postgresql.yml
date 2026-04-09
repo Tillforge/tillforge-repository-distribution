@@ -4,6 +4,8 @@ services:
   clamav:
     image: clamav/clamav:latest
     container_name: tillforge-repository-clamav
+    environment:
+      - TZ=${TZ:-Europe/Amsterdam}
     volumes:
       - /data/tillforge-repo/storage:/data/storage
       - /data/tillforge-repo/clamav:/var/lib/clamav
