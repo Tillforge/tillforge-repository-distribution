@@ -130,8 +130,12 @@ else
 fi
 
 admin_stats_code="$(status_code "${BASE_URL}/admin/stats")"
-if [[ "$admin_stats_code" == "401" || "$admin_stats_code" == "302" ]]; then
-  echo "OK:   admin stats requires session ($admin_stats_code)"
+if [[ "$admin_stats_code" == "401" || "$admin_stats_code" == "302" || "$admin_stats_code" == "404" ]]; then
+  if [[ "$admin_stats_code" == "404" ]]; then
+    echo "OK:   admin stats route not present in this build (404)"
+  else
+    echo "OK:   admin stats requires session ($admin_stats_code)"
+  fi
 else
   echo "FAIL: admin stats unexpectedly public ($admin_stats_code)"
   exit 1
