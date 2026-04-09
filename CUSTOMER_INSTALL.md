@@ -78,7 +78,8 @@ ClamAV note:
 - ClamAV sidecar is enabled by default via Docker Compose.
 - You do **not** need to uncomment ClamAV lines in `.env` for normal use.
 - Auto scan schedule is configured in Admin UI (Malware Scan section). Settings persist in the app database.
-- Only set `CLAMAV_TCP_HOST`, `CLAMAV_TCP_PORT`, `CLAMAV_SCAN_TARGET`, `CLAMAV_SCAN_TARGET_HOST`, `CLAMAV_SCAN_TIMEOUT_SECONDS`, `CLAMAV_ROOT_DIR`, `CLAMAV_QUARANTINE_ENABLED`, `CLAMAV_QUARANTINE_DIR`, `CLAMAV_AUTO_SCAN`, `CLAMAV_AUTO_SCAN_INTERVAL_SECONDS` when you want non-default values.
+- Startup race protection is enabled by default (scheduler waits before first auto-scan and retries sidecar readiness quietly).
+- Only set `CLAMAV_TCP_HOST`, `CLAMAV_TCP_PORT`, `CLAMAV_SCAN_TARGET`, `CLAMAV_SCAN_TARGET_HOST`, `CLAMAV_SCAN_TIMEOUT_SECONDS`, `CLAMAV_ROOT_DIR`, `CLAMAV_QUARANTINE_ENABLED`, `CLAMAV_QUARANTINE_DIR`, `CLAMAV_AUTO_SCAN`, `CLAMAV_AUTO_SCAN_INTERVAL_SECONDS`, `CLAMAV_AUTO_SCAN_STARTUP_DELAY_SECONDS`, `CLAMAV_AUTO_SCAN_RETRY_DELAY_SECONDS` when you want non-default values.
 
 Default image stays on:
 - `REPO_IMAGE=ghcr.io/tillforge/tillforge-repository:latest`
