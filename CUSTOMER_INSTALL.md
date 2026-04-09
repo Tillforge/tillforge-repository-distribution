@@ -48,6 +48,24 @@ make init-postgresql
 
 This also sets `POSTGRES_PASSWORD` and PostgreSQL connection variables automatically.
 
+Network/ports note (important):
+- Port `8001`: Repository web/API endpoint.
+- Port `9001`: Sync API endpoint for server-to-server sync.
+- Default bind is `127.0.0.1` (local-only).
+- For VPC deployments where another instance must reach `9001`, set bind addresses to `0.0.0.0` in `.env`.
+
+Recommended in VPC:
+
+```env
+REPO_BIND_ADDRESS=0.0.0.0
+SYNC_BIND_ADDRESS=0.0.0.0
+```
+
+Firewall / security group rules:
+- Allow inbound `8001` from intended public path (for example LB, reverse proxy, or explicit source range).
+- Allow inbound `9001` only from private IPs/security-group of trusted sync peer instances.
+- Do not expose `9001` to the public internet.
+
 ClamAV note:
 - ClamAV sidecar is enabled by default via Docker Compose.
 - You do **not** need to uncomment ClamAV lines in `.env` for normal use.
@@ -106,6 +124,7 @@ Behavior:
 What gets scanned:
 - `/data/tillforge-repo/storage` on the host
 - mounted as `/data/storage` in both `repository` and `clamav` containers
+- Admin/API status shows the in-container path (`/data/storage`), which maps to the host path above.
 
 Check ClamAV sidecar health:
 

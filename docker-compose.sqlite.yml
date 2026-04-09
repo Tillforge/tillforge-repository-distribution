@@ -48,7 +48,6 @@ services:
       - CERTBOT_AUTO_RESTART_ON_RENEW=${CERTBOT_AUTO_RESTART_ON_RENEW:-true}
       - CLAMAV_TCP_HOST=${CLAMAV_TCP_HOST:-clamav}
       - CLAMAV_TCP_PORT=${CLAMAV_TCP_PORT:-3310}
-      - CLAMAV_SCAN_TARGET=/data/storage
       - CLAMAV_SCAN_TIMEOUT_SECONDS=${CLAMAV_SCAN_TIMEOUT_SECONDS:-1800}
       - REPO_DESCRIPTION=${REPO_DESCRIPTION:-Package repository for your platform}
       - REPO_CONTACT=${REPO_CONTACT:-admin@poscmdb.local}
